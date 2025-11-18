@@ -2,45 +2,98 @@
 
 namespace App\Services;
 
-use App\Models\Task;
-use Kreait\Firebase\Firestore;
+use Google\Cloud\Firestore\FirestoreClient;
 
 class TaskService
 {
-    public function __construct(private Firestore $firestore) {}
+    private FirestoreClient $firestore;
+
+    public function __construct()
+    {
+        $this->firestore = new FirestoreClient();
+    }
 
     public function all(string $userId): array
     {
         $tasks = [];
-
-        $docs = $this->firestore->database()
-            ->collection('tasks')
+        $docs = $this->firestore->collection('tasks')
             ->where('userId', '=', $userId)
             ->orderBy('createdAt', 'DESC')
             ->documents();
 
         foreach ($docs as $doc) {
             if ($doc->exists()) {
-                $task[] = Task::fromFirestore($doc, $doc->id());
+                $tasks[] = [
+                    'id' => $doc->id(),
+                    'userId' => $doc['userId'],
+                    'title' => $doc['title'],
+                    'completed' => $doc['completed'] ?? false,
+                    'createdAt' => $doc['createdAt'] ?? null,
+                ];
             }
         }
-
         return $tasks;
     }
 
-    public function update(string $id, array $data): ?Task
+    public function create(array $data): array
     {
-        $docRef = $this->firestore->database()->collection('tasks')->document($id);
-        if (!$docRef->snapshot()->exists()) return null;
+        $task = [
+            'userId' => $data['user_id'],
+            'title' => $data['title'],
+            'completed' => false,
+            'createdAt' => new \DateTimeImmutable(),
+        ];
 
-        $docRef->update($data);
-        $updated = $docRef->snapshot();
+        $docRef = $this->firestore->collection('tasks')->newDocument();
+        $docRef->set($task);
+        $snapshot = $docRef->snapshot();
 
-        return Task::fromFirestore($updated->data(), $updated->id());
+        return [
+            'id' => $snapshot->id(),
+            'userId' => $snapshot['userId'],
+            'title' => $snapshot['title'],
+            'completed' => $snapshot['completed'],
+            'createdAt' => $snapshot['createdAt'],
+        ];
     }
 
-    public function delete(string $id): void
+    public function update(string $id, array $data): ?array
     {
-        $this->firestore->database()->collection('tasks')->document($id)->delete();
+        $docRef = $this->firestore->collection('tasks')->document($id);
+        $snapshot = $docRef->snapshot();
+
+        if (!$snapshot->exists() || $snapshot['userId'] !== ($data['user_id'] ?? '')) {
+            return null;
+        }
+
+        $updates = [];
+        if (isset($data['title'])) $updates['title'] = $data['title'];
+        if (isset($data['completed'])) $updates['completed'] = $data['completed'];
+
+        if (!empty($updates)) {
+            $docRef->update($updates);
+        }
+
+        $updated = $docRef->snapshot();
+        return [
+            'id' => $updated->id(),
+            'userId' => $updated['userId'],
+            'title' => $updated['title'],
+            'completed' => $updated['completed'],
+            'createdAt' => $updated['createdAt'],
+        ];
+    }
+
+    public function delete(string $id, string $userId): bool
+    {
+        $docRef = $this->firestore->collection('tasks')->document($id);
+        $snapshot = $docRef->snapshot();
+
+        if (!$snapshot->exists() || $snapshot['userId'] !== $userId) {
+            return false;
+        }
+
+        $docRef->delete();
+        return true;
     }
 }
