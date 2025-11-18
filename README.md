@@ -10,7 +10,7 @@ A production-ready **Task Manager SPA** built with:
   - Cloud Build (CI/CD)
   - Secret Manager (secrets)
 
-✅ **Interview-ready features**:
+✅ **Ready features**:
 - Form Request validation (best practice)
 - Secure cross-origin authentication
 - Dockerized, reproducible builds
