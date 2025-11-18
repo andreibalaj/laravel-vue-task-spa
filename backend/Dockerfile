@@ -1,16 +1,25 @@
-# Use official PHP 8.3 Apache image WITH gRPC pre-installed
-FROM gcr.io/google-appengine/php83:2025-04-01-15-00
+# Use official PHP 8.3 Apache
+FROM php:8.3-apache
 
-# Install only what's needed
+# Install system deps (including build tools for gRPC)
 RUN apt-get update && apt-get install -y \
     git \
-    zip \
-    unzip \
+    curl \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
+    zip \
+    unzip \
+    autoconf \
+    build-essential \
+    libssl-dev \
+    libz-dev \
     && docker-php-ext-install mbstring zip
+
+# Install gRPC and Protobuf via PECL (this will take ~2-3 min, not 7)
+RUN pecl install grpc protobuf \
+    && docker-php-ext-enable grpc protobuf
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -24,13 +33,13 @@ COPY . .
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Install deps
+# Install PHP deps (no-dev)
 RUN composer install --optimize-autoloader --no-dev
 
-# Generate app key (overridden in Cloud Run)
+# Generate app key
 RUN php artisan key:generate
 
-# Enable mod_rewrite
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
 EXPOSE 80
