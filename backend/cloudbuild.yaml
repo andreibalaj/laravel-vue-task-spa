@@ -1,0 +1,21 @@
+# backend/cloudbuild.yaml
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:$SHORT_SHA', 'backend/']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:$SHORT_SHA']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'task-api'
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/task-api:$SHORT_SHA'
+      - '--platform=managed'
+      - '--region=us-central1'
+      - '--allow-unauthenticated'
+      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID'
+      # APP_KEY will be set in Cloud Run UI (see below)
+
+options:
+  logging: CLOUD_LOGGING_ONLY
