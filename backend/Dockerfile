@@ -1,7 +1,7 @@
-# Use official PHP 8.3 Apache
+# Use official PHP 8.3 Apache (Debian Bookworm)
 FROM php:8.3-apache
 
-# Install system deps (including build tools for gRPC)
+# Install system deps + pre-built gRPC from Debian
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -11,35 +11,24 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    autoconf \
-    build-essential \
-    libssl-dev \
-    libz-dev \
+    php-grpc \
+    php-protobuf \
     && docker-php-ext-install mbstring zip
-
-# Install gRPC and Protobuf via PECL (this will take ~2-3 min, not 7)
-RUN pecl install grpc protobuf \
-    && docker-php-ext-enable grpc protobuf
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy code
 COPY . .
 
-# Fix permissions
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Install PHP deps (no-dev)
 RUN composer install --optimize-autoloader --no-dev
 
-# Generate app key
 RUN php artisan key:generate
 
-# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
 EXPOSE 80
