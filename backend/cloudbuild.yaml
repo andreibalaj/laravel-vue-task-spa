@@ -1,30 +1,23 @@
-# cloudbuild.yaml (Place this in your project root)
+# cloudbuild.yaml
 steps:
   # 1. Build the Docker image
   - id: 'Build Image'
     name: 'gcr.io/cloud-builders/docker'
     args: [
       'build', 
-      '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:$SHORT_SHA', 
+      # Tag the image directly as :latest for the build/cache process
+      '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest', 
       'backend/',
-      # 🚨 CRITICAL FOR CACHING: Use cache from the latest existing image
+      # CACHING: Use cache from the latest existing image
       '--cache-from', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest' 
     ]
 
-  # 2. Push the newly built image (with two tags: SHORT_SHA and latest)
-  - id: 'Push Image (SHA)'
-    name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:$SHORT_SHA']
-    
-  - id: 'Tag and Push Image (Latest)'
-    name: 'gcr.io/cloud-builders/docker'
-    args: ['tag', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:$SHORT_SHA', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest']
-    
+  # 2. Push the newly built image with the :latest tag
   - id: 'Push Image (Latest Tag)'
     name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest']
   
-  # 3. Deploy the image to Cloud Run using the SHORT_SHA tag
+  # 3. Deploy the image to Cloud Run using the :latest tag
   - id: 'Deploy to Cloud Run'
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
@@ -32,12 +25,12 @@ steps:
       - 'run'
       - 'deploy'
       - 'task-api'
-      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/task-api:$SHORT_SHA'
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest'
       - '--platform=managed'
       - '--region=us-central1'
       - '--allow-unauthenticated'
       - '--set-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID'
 
 options:
-  # 🚨 COST SAVINGS: By omitting machineType, we default to the free tier (e2-medium).
+  # COST SAVINGS: Default to the free tier (e2-medium).
   logging: CLOUD_LOGGING_ONLY
