@@ -1,45 +1,39 @@
 # cloudbuild.yaml
 substitutions:
-  # System provided PROJECT_ID (case-sensitive)
   _PROJECT_ID: $PROJECT_ID
-  # Create a lowercase version for Docker tagging (required by AR/Docker)
   _LOWER_PROJECT_ID: ${PROJECT_ID}
-  # Define the AR Hostname explicitly
   _AR_HOSTNAME: "us-central1-docker.pkg.dev"
 
-  # Image tagged with the immutable commit SHA (Best Practice)
+  # Define the full tag paths
   _IMAGE_NAME_SHA: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:$COMMIT_SHA"
-  # Image tagged with :latest for caching and general access (Convenience Tag)
   _IMAGE_NAME_LATEST: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:latest"
 
 steps:
-  # 1. Build the Docker image
+  # 1. Build the Docker image (FIXED TAGGING SYNTAX)
   - id: "Build Image"
     name: "gcr.io/cloud-builders/docker"
-    args: [
-        "build",
-        "-t",
-        "${_IMAGE_NAME_SHA}", # Tags with unique COMMIT_SHA
-        "-t",
-        "${_IMAGE_NAME_LATEST}", # Also tag with :latest for caching
-        "backend/",
-        "--cache-from",
-        "${_IMAGE_NAME_LATEST}", # Use latest tag for cache pull
-      ]
+    entrypoint: "bash"
+    args:
+      - "-c"
+      # Using BASH ensures all variable substitutions work correctly for both tags
+      - |
+        docker build \
+        -t ${_IMAGE_NAME_SHA} \
+        -t ${_IMAGE_NAME_LATEST} \
+        --cache-from ${_IMAGE_NAME_LATEST} \
+        backend/
 
   # 2. AUTHENTICATION: Configure Docker credentials using GCloud SDK
-  # This step uses the gcloud builder to run the authentication helper.
   - id: "Configure Docker Auth"
-    name: "gcr.io/google.com/cloudsdktool/cloud-sdk" # Has gcloud, no docker
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: "bash"
     args:
       - "-c"
       - gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
-  # 3. PUSH IMAGE: Use the authenticated Docker builder to push both tags
-  # The docker builder now finds the authentication set up in Step 2.
+  # 3. PUSH IMAGE: Use the authenticated Docker builder to push the unique tag
   - id: "Push Image"
-    name: "gcr.io/cloud-builders/docker" # Has docker, uses credentials from step 2
+    name: "gcr.io/cloud-builders/docker"
     args: [
         "push",
         "${_IMAGE_NAME_SHA}", # Push the unique SHA tag
