@@ -1,14 +1,12 @@
-# cloudbuild.yaml
+# cloudbuild.yaml 
 steps:
   # 1. Build the Docker image
   - id: 'Build Image'
     name: 'gcr.io/cloud-builders/docker'
     args: [
       'build', 
-      # Tag the image directly as :latest for the build/cache process
       '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest', 
       'backend/',
-      # CACHING: Use cache from the latest existing image
       '--cache-from', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest' 
     ]
 
@@ -32,5 +30,4 @@ steps:
       - '--set-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID'
 
 options:
-  # COST SAVINGS: Default to the free tier (e2-medium).
   logging: CLOUD_LOGGING_ONLY
