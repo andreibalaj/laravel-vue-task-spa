@@ -10,22 +10,14 @@ substitutions:
   _IMAGE_NAME: '${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:latest'
 steps:
   # 1. Build the Docker image
-  - id: 'Build Image'
-    name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build', 
-      '-t', '${_IMAGE_NAME}', 
-      'backend/',
-      '--cache-from', '${_IMAGE_NAME}' 
-    ]
-
-  - id: 'Push Image (DEBUG MODE)'
-    name: 'gcr.io/cloud-builders/docker'
-    entrypoint: 'bash'
-    args: 
-      - '-c'
-      # DEBUG: Prints the command, then executes the command.
-      - 'echo "DEBUG: Executing command: docker push ${_IMAGE_NAME}" && docker push ${_IMAGE_NAME}'
+  - id: 'Push Image (Gcloud Artifacts)'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk' # Uses the GCloud builder
+    entrypoint: gcloud
+    args:
+      - 'artifacts'
+      - 'docker'
+      - 'push'
+      - 'us-central1-docker.pkg.dev/${_LOWER_PROJECT_ID}/task-api:latest'
   
   # 3. Deploy the image to Cloud Run using the :latest tag
   - id: 'Deploy to Cloud Run'
