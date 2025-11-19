@@ -13,22 +13,11 @@ steps:
     name: "gcr.io/cloud-builders/docker"
     args: ["build", "-t", "${_IMAGE_NAME_LATEST}", "backend/"]
 
-  # 2. AUTHENTICATION & PUSH
-  # This step uses the cloud-sdk builder to ensure both gcloud and docker are available
-  # via the shell, guaranteeing execution order and token availability.
-  - id: "Auth and Push Image"
-    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    entrypoint: "bash"
-    args:
-      - "-c"
-      #  Use a sub-shell to run the command requiring gcloud and push it.
-      - |
-        # 1. Install Docker locally within this build step's environment
-        apt-get update && apt-get install -y docker.io 
-
-        # 2. Configure credentials AND push in one reliable sequence
-        gcloud auth configure-docker ${_AR_HOSTNAME} --quiet \
-        && docker push ${_IMAGE_NAME_LATEST}
+  # 2. PUSH IMAGE
+  # Use the OFFICIAL docker builder image
+  - id: "Push Image"
+    name: "gcr.io/cloud-builders/docker"
+    args: ["push", "${_IMAGE_NAME_LATEST}"]
 
   # 3. Deploy the :latest image to Cloud Run
   - id: "Deploy to Cloud Run"
