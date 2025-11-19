@@ -1,20 +1,21 @@
 # cloudbuild.yaml 
+substitutions:
+  _IMAGE_NAME: 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest'
 steps:
   # 1. Build the Docker image
   - id: 'Build Image'
     name: 'gcr.io/cloud-builders/docker'
     args: [
       'build', 
-      '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest', 
+      '-t', '${_IMAGE_NAME}', 
       'backend/',
-      '--cache-from', 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest' 
+      '--cache-from', '${_IMAGE_NAME}' 
     ]
 
   # 2. Push the newly built image with the :latest tag
   - id: 'Push Image (Latest Tag)'
     name: 'gcr.io/cloud-builders/docker'
-    entrypoint: 'bash'
-    args: ['-c', 'docker push us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest']
+    args: ['push', '${_IMAGE_NAME}']
   
   # 3. Deploy the image to Cloud Run using the :latest tag
   - id: 'Deploy to Cloud Run'
@@ -24,7 +25,7 @@ steps:
       - 'run'
       - 'deploy'
       - 'task-api'
-      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest'
+      - '--image=${_IMAGE_NAME}'
       - '--platform=managed'
       - '--region=us-central1'
       - '--allow-unauthenticated'
