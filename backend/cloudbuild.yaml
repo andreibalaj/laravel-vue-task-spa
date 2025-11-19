@@ -20,14 +20,16 @@ steps:
     ]
 
   # Push Image to Artifacts
-  - id: 'Push Image (Gcloud Artifacts)'
-    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk' # Uses the GCloud builder
-    entrypoint: gcloud
-    args:
-      - 'artifacts'
-      - 'docker'
-      - 'push'
-      - 'us-central1-docker.pkg.dev/${_LOWER_PROJECT_ID}/task-api:latest'
+  # Step 2. Push the image using the definitive gcloud method
+  - id: 'Push Image (Auth + Push)'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk' # Use the GCloud builder for shell access
+    entrypoint: 'bash'
+    args: 
+      - '-c'
+      - |
+        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet \
+        && docker push us-central1-docker.pkg.dev/${_LOWER_PROJECT_ID}/task-api:latest
+        
   
   # 3. Deploy the image to Cloud Run using the :latest tag
   - id: 'Deploy to Cloud Run'
