@@ -1,7 +1,6 @@
 # cloudbuild.yaml
 substitutions:
   _PROJECT_ID: $PROJECT_ID
-  # Required for the repository URL, where Docker requires lowercase.
   _LOWER_PROJECT_ID: ${PROJECT_ID}
   _AR_HOSTNAME: "us-central1-docker.pkg.dev"
 
@@ -9,25 +8,29 @@ substitutions:
   _IMAGE_NAME_LATEST: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:latest"
 
 steps:
-  # 1. Build the Docker image (ONLY uses the :latest tag)
+  # 1. Build the Docker image (Restored to working array format)
   - id: "Build Image"
     name: "gcr.io/cloud-builders/docker"
     args: ["build", "-t", "${_IMAGE_NAME_LATEST}", "backend/"]
 
-  # 2. AUTHENTICATION: Configure Docker credentials
-  - id: "Configure Docker Auth"
-    name: "gcr.io/google.com/cloudsdktool/cloud-sdk" # Has gcloud
+  # 2. AUTHENTICATION & PUSH
+  # This step uses the cloud-sdk builder to ensure both gcloud and docker are available
+  # via the shell, guaranteeing execution order and token availability.
+  - id: "Auth and Push Image"
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: "bash"
     args:
       - "-c"
-      - gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+      #  Use a sub-shell to run the command requiring gcloud and push it.
+      - |
+        # 1. Install Docker locally within this build step's environment
+        apt-get update && apt-get install -y docker.io 
 
-  # 3. PUSH IMAGE: Use the authenticated Docker builder to push the :latest tag
-  - id: "Push Image"
-    name: "gcr.io/cloud-builders/docker" # Has docker
-    args: ["push", "${_IMAGE_NAME_LATEST}"]
+        # 2. Configure credentials AND push in one reliable sequence
+        gcloud auth configure-docker ${_AR_HOSTNAME} --quiet \
+        && docker push ${_IMAGE_NAME_LATEST}
 
-  # 4. Deploy the :latest image to Cloud Run
+  # 3. Deploy the :latest image to Cloud Run
   - id: "Deploy to Cloud Run"
     name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
