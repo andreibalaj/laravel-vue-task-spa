@@ -20,7 +20,6 @@ steps:
   # 2. Push the newly built image with the :latest tag
   - id: 'Push Image (Latest Tag)'
     name: 'gcr.io/cloud-builders/docker'
-    entrypoint: 'bash'
     args: 
      - push
      - >-
