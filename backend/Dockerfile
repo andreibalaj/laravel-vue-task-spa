@@ -18,8 +18,10 @@ RUN apk update && apk add --no-cache \
     # Clean up apk cache to keep image size small
     && rm -rf /var/cache/apk/*
 
-# Explicitly enable the gRPC extension
-RUN echo "extension=grpc.so" > /usr/local/etc/php/conf.d/40-grpc.ini
+# Explicitly set the extension_dir for Alpine modules
+# and then enable the extension using its filename only.
+RUN echo "extension_dir=/usr/lib/php83/modules" > /usr/local/etc/php/conf.d/40-grpc.ini \
+    && echo "extension=grpc.so" >> /usr/local/etc/php/conf.d/40-grpc.ini
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
