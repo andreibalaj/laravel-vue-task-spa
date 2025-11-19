@@ -1,6 +1,11 @@
 # cloudbuild.yaml 
 substitutions:
-  _IMAGE_NAME: 'us-central1-docker.pkg.dev/$PROJECT_ID/task-api:latest'
+  # Use the system's PROJECT_ID, which may contain uppercase letters
+  _PROJECT_ID: $PROJECT_ID
+  # Create a lowercase version for Docker tagging
+  _LOWER_PROJECT_ID: ${PROJECT_ID}
+  # Construct the final image name using the lowercase project ID
+  _IMAGE_NAME: 'us-central1-docker.pkg.dev/${_LOWER_PROJECT_ID}/task-api:latest'
 steps:
   # 1. Build the Docker image
   - id: 'Build Image'
