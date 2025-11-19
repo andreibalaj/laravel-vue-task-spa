@@ -1,29 +1,19 @@
-# cloudbuild.yaml
+# Substitutions block to use the standard PROJECT_ID
 substitutions:
   _PROJECT_ID: $PROJECT_ID
   _LOWER_PROJECT_ID: ${PROJECT_ID}
   _AR_HOSTNAME: "us-central1-docker.pkg.dev"
 
-  # Define the full tag paths
-  _IMAGE_NAME_SHA: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:$COMMIT_SHA"
-  _IMAGE_NAME_LATEST: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:latest"
+  # Define the deployment tag (SHA) to keep it simple
+  _IMAGE_NAME: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:$COMMIT_SHA"
 
 steps:
-  # 1. Build the Docker image (FIXED TAGGING SYNTAX)
+  # 1. Build the Docker image (SIMPLE, RELIABLE ARRAY FORMAT)
   - id: "Build Image"
     name: "gcr.io/cloud-builders/docker"
-    entrypoint: "bash"
-    args:
-      - "-c"
-      # Using BASH ensures all variable substitutions work correctly for both tags
-      - |
-        docker build \
-        -t ${_IMAGE_NAME_SHA} \
-        -t ${_IMAGE_NAME_LATEST} \
-        --cache-from ${_IMAGE_NAME_LATEST} \
-        backend/
+    args: ["build", "-t", "${_IMAGE_NAME}", "backend/"]
 
-  # 2. AUTHENTICATION: Configure Docker credentials using GCloud SDK
+  # 2. AUTHENTICATION: Configure Docker credentials
   - id: "Configure Docker Auth"
     name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: "bash"
@@ -31,13 +21,10 @@ steps:
       - "-c"
       - gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
-  # 3. PUSH IMAGE: Use the authenticated Docker builder to push the unique tag
+  # 3. PUSH IMAGE: Push the unique SHA tag
   - id: "Push Image"
     name: "gcr.io/cloud-builders/docker"
-    args: [
-        "push",
-        "${_IMAGE_NAME_SHA}", # Push the unique SHA tag
-      ]
+    args: ["push", "${_IMAGE_NAME}"]
 
   # 4. Deploy the unique image to Cloud Run
   - id: "Deploy to Cloud Run"
@@ -47,7 +34,7 @@ steps:
       - "run"
       - "deploy"
       - "task-api"
-      - "--image=${_IMAGE_NAME_SHA}" # Deploy the unique SHA-tagged image
+      - "--image=${_IMAGE_NAME}"
       - "--platform=managed"
       - "--region=us-central1"
       - "--allow-unauthenticated"
