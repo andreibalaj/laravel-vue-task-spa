@@ -18,6 +18,9 @@ RUN apk update && apk add --no-cache \
     # Clean up apk cache to keep image size small
     && rm -rf /var/cache/apk/*
 
+# Explicitly enable the gRPC extension
+RUN echo "extension=grpc.so" > /usr/local/etc/php/conf.d/40-grpc.ini
+
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
