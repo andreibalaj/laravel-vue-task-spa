@@ -10,6 +10,16 @@ substitutions:
   _IMAGE_NAME: '${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:latest'
 steps:
   # 1. Build the Docker image
+  - id: 'Build Image'
+    name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '-t', '${_IMAGE_NAME}', 
+      'backend/',
+      '--cache-from', '${_IMAGE_NAME}' 
+    ]
+
+  # Push Image to Artifacts
   - id: 'Push Image (Gcloud Artifacts)'
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk' # Uses the GCloud builder
     entrypoint: gcloud
