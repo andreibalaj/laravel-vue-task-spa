@@ -1,49 +1,63 @@
-# cloudbuild.yaml 
+# cloudbuild.yaml
 substitutions:
-  # Use the system's PROJECT_ID, which may contain uppercase letters
+  # System provided PROJECT_ID (case-sensitive)
   _PROJECT_ID: $PROJECT_ID
-  # Create a lowercase version for Docker tagging
+  # Create a lowercase version for Docker tagging (required by AR/Docker)
   _LOWER_PROJECT_ID: ${PROJECT_ID}
-  # Hostname
-  _AR_HOSTNAME: 'us-central1-docker.pkg.dev'
-  # Construct the final image name using the lowercase project ID
-  _IMAGE_NAME: '${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:latest'
+  # Define the AR Hostname explicitly
+  _AR_HOSTNAME: "us-central1-docker.pkg.dev"
+
+  # Image tagged with the immutable commit SHA (Best Practice)
+  _IMAGE_NAME_SHA: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:$COMMIT_SHA"
+  # Image tagged with :latest for caching and general access (Convenience Tag)
+  _IMAGE_NAME_LATEST: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:latest"
+
 steps:
   # 1. Build the Docker image
-  - id: 'Build Image'
-    name: 'gcr.io/cloud-builders/docker'
+  - id: "Build Image"
+    name: "gcr.io/cloud-builders/docker"
     args: [
-      'build', 
-      '-t', '${_IMAGE_NAME}', 
-      'backend/',
-      '--cache-from', '${_IMAGE_NAME}' 
-    ]
+        "build",
+        "-t",
+        "${_IMAGE_NAME_SHA}", # Tags with unique COMMIT_SHA
+        "-t",
+        "${_IMAGE_NAME_LATEST}", # Also tag with :latest for caching
+        "backend/",
+        "--cache-from",
+        "${_IMAGE_NAME_LATEST}", # Use latest tag for cache pull
+      ]
 
-  # Push Image to Artifacts
-  # Step 2. Push the image using the definitive gcloud method
-  - id: 'Push Image (Auth + Push)'
-    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk' # Use the GCloud builder for shell access
-    entrypoint: 'bash'
-    args: 
-      - '-c'
-      - |
-        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet \
-        && docker push us-central1-docker.pkg.dev/${_LOWER_PROJECT_ID}/task-api:latest
-        
-  
-  # 3. Deploy the image to Cloud Run using the :latest tag
-  - id: 'Deploy to Cloud Run'
-    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  # 2. AUTHENTICATION: Configure Docker credentials using GCloud SDK
+  # This step uses the gcloud builder to run the authentication helper.
+  - id: "Configure Docker Auth"
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk" # Has gcloud, no docker
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+  # 3. PUSH IMAGE: Use the authenticated Docker builder to push both tags
+  # The docker builder now finds the authentication set up in Step 2.
+  - id: "Push Image"
+    name: "gcr.io/cloud-builders/docker" # Has docker, uses credentials from step 2
+    args: [
+        "push",
+        "${_IMAGE_NAME_SHA}", # Push the unique SHA tag
+      ]
+
+  # 4. Deploy the unique image to Cloud Run
+  - id: "Deploy to Cloud Run"
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
     args:
-      - 'run'
-      - 'deploy'
-      - 'task-api'
-      - '--image=${_IMAGE_NAME}'
-      - '--platform=managed'
-      - '--region=us-central1'
-      - '--allow-unauthenticated'
-      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID'
+      - "run"
+      - "deploy"
+      - "task-api"
+      - "--image=${_IMAGE_NAME_SHA}" # Deploy the unique SHA-tagged image
+      - "--platform=managed"
+      - "--region=us-central1"
+      - "--allow-unauthenticated"
+      - "--set-env-vars=GOOGLE_CLOUD_PROJECT=${_PROJECT_ID}"
 
 options:
   logging: CLOUD_LOGGING_ONLY
