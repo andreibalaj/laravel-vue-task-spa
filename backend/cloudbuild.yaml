@@ -20,7 +20,7 @@ steps:
   # 2. Push the newly built image with the :latest tag
   - id: 'Push Image (Latest Tag)'
     name: 'gcr.io/cloud-builders/docker'
-    args: ['push', '${_IMAGE_NAME}']
+    args: ['push', 'us-central1-docker.pkg.dev/${_LOWER_PROJECT_ID}/task-api:latest']
   
   # 3. Deploy the image to Cloud Run using the :latest tag
   - id: 'Deploy to Cloud Run'
