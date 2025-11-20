@@ -7,6 +7,9 @@ PORT=${PORT:-8080}
 # We use sed to replace a placeholder port (e.g., 8080) with the actual $PORT value
 sed -i "s/listen 8080;/listen ${PORT};/" /etc/nginx/conf.d/default.conf
 
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
 # 2. Start PHP-FPM in the background
 php-fpm83 -D
 
