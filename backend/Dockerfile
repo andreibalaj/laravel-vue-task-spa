@@ -36,6 +36,13 @@ COPY . .
 RUN composer install --optimize-autoloader --no-dev
 RUN chmod -R 775 storage bootstrap/cache
 
+RUN php artisan config:clear && \
+    php artisan cache:clear && \
+    php artisan view:clear && \
+    php artisan route:clear && \
+    php artisan config:cache && \
+    php artisan route:cache
+
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
