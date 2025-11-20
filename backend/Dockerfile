@@ -36,7 +36,7 @@ COPY . .
 RUN composer install --optimize-autoloader --no-dev
 RUN chmod -R 775 storage bootstrap/cache
 
-COPY nginx-default.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
