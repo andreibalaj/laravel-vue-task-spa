@@ -15,6 +15,8 @@ RUN apk update && apk add --no-cache \
     php83-pecl-grpc \
     grpc \
     libstdc++ \
+    nginx \
+    bash \
     # Clean up apk cache to keep image size small
     && rm -rf /var/cache/apk/*
 
@@ -34,4 +36,8 @@ COPY . .
 RUN composer install --optimize-autoloader --no-dev
 RUN chmod -R 775 storage bootstrap/cache
 
-CMD ["php-fpm83"]
+COPY nginx-default.conf /etc/nginx/conf.d/default.conf
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
