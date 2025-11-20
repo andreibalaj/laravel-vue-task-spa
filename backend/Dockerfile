@@ -37,7 +37,6 @@ RUN composer install --optimize-autoloader --no-dev
 RUN chmod -R 775 storage bootstrap/cache
 
 RUN php artisan config:clear && \
-    php artisan cache:clear && \
     php artisan view:clear && \
     php artisan route:clear && \
     php artisan config:cache && \
