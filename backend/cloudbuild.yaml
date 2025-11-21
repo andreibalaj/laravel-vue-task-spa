@@ -1,37 +1,50 @@
-# cloudbuild.yaml
-substitutions:
-  _PROJECT_ID: $PROJECT_ID
-  _LOWER_PROJECT_ID: ${PROJECT_ID}
-  _AR_HOSTNAME: "us-central1-docker.pkg.dev"
-
-  # Define the full image path using ONLY the :latest tag
-  _IMAGE_NAME_LATEST: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api:latest"
-
 steps:
-  # 1. Build the Docker image (Restored to working array format)
-  - id: "Build Image"
-    name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "${_IMAGE_NAME_LATEST}", "backend/"]
-
-  # 2. PUSH IMAGE
-  # Use the OFFICIAL docker builder image
-  - id: "Push Image"
-    name: "gcr.io/cloud-builders/docker"
-    args: ["push", "${_IMAGE_NAME_LATEST}"]
-
-  # 3. Deploy the :latest image to Cloud Run
-  - id: "Deploy to Cloud Run"
-    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    entrypoint: gcloud
+  - name: gcr.io/cloud-builders/docker
     args:
-      - "run"
-      - "deploy"
-      - "task-api"
-      - "--image=${_IMAGE_NAME_LATEST}" # Deploy the :latest tagged image
+      - build
+      - "-t"
+      - "${_IMAGE_NAME_SHA}"
+      - backend/
+    id: Build Image
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - "${_IMAGE_NAME_SHA}"
+    id: Push Image
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    args:
+      - run
+      - deploy
+      - task-api
       - "--platform=managed"
-      - "--region=us-central1"
+      - "--image=${_IMAGE_NAME_SHA}"
+      - "--region=${_DEPLOY_REGION}"
+      - "--timeout=600s"
       - "--allow-unauthenticated"
       - "--set-env-vars=GOOGLE_CLOUD_PROJECT=${_PROJECT_ID}"
 
+      - "--set-env-vars=APP_NAME=TaskApi"
+      - "--set-env-vars=APP_KEY=base64:MnaRSjwloFQcrJS7P+iJGk6tlqUFhfJd/cERNuwS9dk="
+      - "--set-env-vars=APP_URL=https://task-api-972999949636.us-central1.run.app"
+      - "--set-env-vars=APP_LOCALE=en"
+      - "--set-env-vars=APP_FALLBACK_LOCALE=en"
+      - "--set-env-vars=APP_FAKER_LOCALE=en_US"
+      - "--set-env-vars=BCRYPT_ROUNDS=12"
+      - "--set-env-vars=LOG_CHANNEL=stack"
+      - "--set-env-vars=LOG_STACK=single"
+      - "--set-env-vars=LOG_DEPRECATIONS_CHANNEL=null"
+      - "--set-env-vars=LOG_LEVEL=debug"
+      - "--set-env-vars=DB_CONNECTION=sqlite"
+      - "--quiet"
+    id: Deploy to Cloud Run
+    entrypoint: gcloud
 options:
+  substitutionOption: ALLOW_LOOSE
   logging: CLOUD_LOGGING_ONLY
+substitutions:
+  _AR_HOSTNAME: us-central1-docker.pkg.dev
+  _DEPLOY_REGION: us-central1
+  _COMMIT_SHA: "${COMMIT_SHA}"
+  _IMAGE_NAME_SHA: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api/backend:${_COMMIT_SHA}"
+  _PROJECT_ID: $PROJECT_ID
+  _LOWER_PROJECT_ID: "${PROJECT_ID}"
