@@ -10,7 +10,9 @@ class TaskService
 
     public function __construct()
     {
-        $this->firestore = new FirestoreClient();
+        $this->firestore = new FirestoreClient([
+            'projectId' => env('GOOGLE_CLOUD_PROJECT')
+        ]);
     }
 
     public function all(string $userId): array

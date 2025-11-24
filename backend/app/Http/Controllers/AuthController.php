@@ -40,9 +40,9 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
-            'user_id' => $userRef->id(),
+            'id' => $userRef->id(),
             'name' => $request->name,
-            'email' => $email,
+            'email' => $email
         ]);
     }
 
