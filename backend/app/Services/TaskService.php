@@ -15,6 +15,12 @@ class TaskService
         ]);
     }
 
+    /**
+     * Get all tasks for a specific user
+     *
+     * @param string $userId The ID of the user to fetch tasks for
+     * @return array List of tasks with id, userId, title, completed, and createdAt
+     */
     public function all(string $userId): array
     {
         $tasks = [];
@@ -37,6 +43,12 @@ class TaskService
         return $tasks;
     }
 
+    /**
+     * Create a new task
+     *
+     * @param array $data Task data containing 'user_id' and 'title'
+     * @return array The created task with id, userId, title, completed, and createdAt
+     */
     public function create(array $data): array
     {
         $task = [
@@ -59,6 +71,13 @@ class TaskService
         ];
     }
 
+    /**
+     * Update an existing task
+     *
+     * @param string $id The Firestore document ID of the task to update
+     * @param array $data The fields to update (title, completed, etc.)
+     * @return array|null Updated task data or null if not found/unauthorized
+     */
     public function update(string $id, array $data): ?array
     {
         $docRef = $this->firestore->collection('tasks')->document($id);
@@ -69,8 +88,13 @@ class TaskService
         }
 
         $updates = [];
-        if (isset($data['title'])) $updates['title'] = $data['title'];
-        if (isset($data['completed'])) $updates['completed'] = $data['completed'];
+
+        foreach ($data as $field => $value) {
+            if ($field === 'user_id') {
+                continue;
+            }
+            $updates[] = ['path' => $field, 'value' => $value];
+        }
 
         if (!empty($updates)) {
             $docRef->update($updates);
@@ -86,6 +110,13 @@ class TaskService
         ];
     }
 
+    /**
+     * Delete a task
+     *
+     * @param string $id The Firestore document ID of the task to delete
+     * @param string $userId The ID of the user requesting deletion
+     * @return bool True if deleted successfully, false if not found/unauthorized
+     */
     public function delete(string $id, string $userId): bool
     {
         $docRef = $this->firestore->collection('tasks')->document($id);
