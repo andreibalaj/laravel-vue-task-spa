@@ -1,6 +1,7 @@
 // src/stores/auth.js
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { useTaskStore } from './tasks'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -38,6 +39,11 @@ export const useAuthStore = defineStore('auth', {
         const res = await api.post('/login', { email, password })
         this.user = res.data
         sessionStorage.setItem('user_id', res.data.id)
+
+        // reset the tasks store for a new user login
+        const taskStore = useTaskStore()
+        taskStore.reset()
+
         return true
       } catch (err) {
         this.error = err.response?.data?.error || 'Invalid email or password'
@@ -50,6 +56,10 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.user = null
       sessionStorage.removeItem('user_id')
+
+      // reset the tasks store for a new user login
+      const taskStore = useTaskStore()
+      taskStore.reset()
     },
 
     initialize() {
