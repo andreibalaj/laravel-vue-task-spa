@@ -21,9 +21,9 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Debug: Check if file exists and has proper permissions
 RUN ls -la /usr/local/bin/entrypoint.sh && \
-    file /usr/local/bin/entrypoint.sh && \
-    cat /usr/local/bin/entrypoint.sh
-
+    echo "=== File content ===" && \
+    cat /usr/local/bin/entrypoint.sh && \
+    echo "=== End file content ==="
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
