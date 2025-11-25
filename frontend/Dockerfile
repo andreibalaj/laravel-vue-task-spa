@@ -8,19 +8,13 @@ COPY ./ .
 RUN npm run build
 
 # Stage 2
-FROM nginx 
+FROM nginx:alpine
 
-# Make app dir
-RUN mkdir /app
+# Copy build files to Nginx's default HTML directory
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy build files
-COPY --from=build /app/dist /app
+# Copy custom Nginx config template
+COPY nginx-spa.conf /etc/nginx/templates/default.conf.template
 
-# Copy custom Nginx config for SPA
-COPY nginx-spa.conf /etc/nginx/nginx.conf
-
-# Expose port 80
-EXPOSE 80
-
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# No EXPOSE needed - Cloud Run uses the PORT env variable
+# The nginx:alpine base image already includes a default CMD
