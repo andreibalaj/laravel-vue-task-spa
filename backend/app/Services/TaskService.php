@@ -26,7 +26,7 @@ class TaskService
         $tasks = [];
         $docs = $this->firestore->collection('tasks')
             ->where('userId', '=', $userId)
-            ->orderBy('createdAt', 'DESC')
+            ->orderBy('createdAt', 'ASC')
             ->documents();
 
         foreach ($docs as $doc) {
