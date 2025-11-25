@@ -1,6 +1,8 @@
 # Stage 1
 FROM node:latest as build
 
+ARG VITE_API_BASE_URL
+
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
