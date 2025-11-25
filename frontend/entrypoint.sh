@@ -1,8 +1,7 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
-# Cloud Run injects the listening port via $PORT (defaults to 8080)
 PORT=${PORT:-8080}
-
 echo "=== Starting frontend container on port: $PORT ==="
 
 # Update Nginx configuration to listen on the required $PORT
@@ -13,6 +12,6 @@ sed -i "s/listen 8080;/listen ${PORT};/g" /etc/nginx/nginx.conf
 echo "Testing nginx configuration..."
 nginx -t
 
-# Start nginx and keep container alive
+# Start nginx
 echo "Starting nginx on port $PORT..."
-nginx -g "daemon off;"
+exec nginx -g "daemon off;"
