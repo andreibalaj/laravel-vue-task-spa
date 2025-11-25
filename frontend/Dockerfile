@@ -13,8 +13,11 @@ FROM nginx:alpine
 # Copy build files to Nginx's default HTML directory
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy custom Nginx config template
-COPY nginx-spa.conf /etc/nginx/templates/default.conf.template
+# Copy nginx config
+COPY nginx-spa.conf /etc/nginx/nginx.conf
 
-# No EXPOSE needed - Cloud Run uses the PORT env variable
-# The nginx:alpine base image already includes a default CMD
+# Copy entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
