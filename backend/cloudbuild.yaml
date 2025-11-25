@@ -25,7 +25,8 @@ steps:
 
       - "--set-env-vars=APP_NAME=TaskApi"
       - "--set-env-vars=APP_KEY=base64:MnaRSjwloFQcrJS7P+iJGk6tlqUFhfJd/cERNuwS9dk="
-      - "--set-env-vars=APP_URL=https://task-api-972999949636.us-central1.run.app"
+      - "--set-env-vars=APP_URL=${_APP_URL}"
+      - "--set-env-vars=FRONTEND_URL=${_FRONTEND_URL}"
       - "--set-env-vars=APP_LOCALE=en"
       - "--set-env-vars=APP_FALLBACK_LOCALE=en"
       - "--set-env-vars=APP_FAKER_LOCALE=en_US"
@@ -48,3 +49,5 @@ substitutions:
   _IMAGE_NAME_SHA: "${_AR_HOSTNAME}/${_LOWER_PROJECT_ID}/task-api/backend:${_COMMIT_SHA}"
   _PROJECT_ID: $PROJECT_ID
   _LOWER_PROJECT_ID: "${PROJECT_ID}"
+  _APP_URL: https://task-api-972999949636.us-central1.run.app
+  _FRONTEND_URL: https://frontend-972999949636.us-central1.run.app
