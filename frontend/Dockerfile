@@ -20,16 +20,6 @@ COPY nginx-spa.conf /etc/nginx/nginx.conf
 
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-
-# Debug: Check if file exists and has proper permissions
-RUN ls -la /usr/local/bin/entrypoint.sh && \
-    echo "=== File content ===" && \
-    cat /usr/local/bin/entrypoint.sh && \
-    echo "=== End file content ==="
-
 RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Debug: Check again after chmod
-RUN ls -la /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
