@@ -5,6 +5,7 @@ return [
 
     'allowed_methods' => ['*'],
 
+    // TODO: Add them into enviroment variables
     'allowed_origins' => [
         'http://localhost:5173',     // Vue/Vite dev server
         'http://127.0.0.1:5173',
