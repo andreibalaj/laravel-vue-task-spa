@@ -17,7 +17,7 @@ A production-ready **Task Manager SPA** built with:
 - Automated deployment via Cloud Build
 
 ## 🔗 Live Demo
-[https://task-api-972999949636.us-central1.run.app](https://task-api-972999949636.us-central1.run.app)
+[https://frontend-972999949636.us-central1.run.app](https://frontend-972999949636.us-central1.run.app)
 
 ## 🌩️ Deployed on GCP
 - **No third-party services**
